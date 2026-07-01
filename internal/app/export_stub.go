@@ -10,3 +10,5 @@ import "net/http"
 func (a *App) registerExportRoutes(mux *http.ServeMux) {}
 
 func (a *App) teamExportPlatforms() []platformRow { return nil }
+
+func (a *App) registerUpdateRoutes(mux *http.ServeMux) {}

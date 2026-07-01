@@ -17,6 +17,7 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/settings", a.settingsRoute)
 	mux.HandleFunc("/settings/import", a.settingsGate(a.handleImportData))
 	a.registerExportRoutes(mux)
+	a.registerUpdateRoutes(mux)
 
 	mux.HandleFunc("/index.php", a.requireLogin(a.handleIndex))
 	mux.HandleFunc("/api/production.php", a.handleProductionAPI)

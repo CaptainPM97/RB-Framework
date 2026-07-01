@@ -325,6 +325,19 @@
                 </p>
             </div>
         </div>
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Update</div>
+                <div class="card-icon">⬆️</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:12px">
+                Aktuell installierte Version: <strong>{{.Version}}</strong>
+            </p>
+            <button type="button" class="hero-btn hero-btn-secondary" id="update-check-btn" onclick="checkForUpdate()">Nach Updates suchen</button>
+            <div class="info-text" id="update-status" style="margin-top:12px;display:none"></div>
+            <button type="button" class="submit-request-btn" id="update-apply-btn" style="display:none;margin-top:10px" onclick="applyUpdate()">Jetzt aktualisieren</button>
+        </div>
         {{end}}
 
     </div>
@@ -358,6 +371,55 @@ function addVapiKeyRow() {
         <button type="button" class="select-all-btn" style="color:var(--red)" onclick="this.closest('.vapi-key-row').remove()">✕ Entfernen</button>
     `;
     list.appendChild(row);
+}
+
+let latestAvailableVersion = null;
+
+async function checkForUpdate() {
+    const status = document.getElementById('update-status');
+    const applyBtn = document.getElementById('update-apply-btn');
+    status.style.display = '';
+    status.textContent = 'Suche nach Updates...';
+    applyBtn.style.display = 'none';
+    try {
+        const res = await fetch('/settings/update/check');
+        const data = await res.json();
+        if (data.error) {
+            status.textContent = 'Prüfung fehlgeschlagen: ' + data.error;
+            return;
+        }
+        if (data.available) {
+            latestAvailableVersion = data.latestVersion;
+            status.textContent = 'Neue Version verfügbar: ' + data.latestVersion + ' (aktuell: ' + data.currentVersion + ')';
+            applyBtn.style.display = '';
+        } else {
+            status.textContent = 'Du hast bereits die neueste Version (' + data.currentVersion + ').';
+        }
+    } catch (e) {
+        status.textContent = 'Prüfung fehlgeschlagen: ' + e;
+    }
+}
+
+async function applyUpdate() {
+    if (!confirm('Version ' + latestAvailableVersion + ' wird heruntergeladen und installiert. Die App schließt sich danach kurz und startet automatisch neu. Fortfahren?')) {
+        return;
+    }
+    const status = document.getElementById('update-status');
+    const applyBtn = document.getElementById('update-apply-btn');
+    applyBtn.disabled = true;
+    status.textContent = 'Update wird heruntergeladen und installiert — die App startet gleich neu...';
+    try {
+        const res = await fetch('/settings/update/apply', { method: 'POST' });
+        // A successful update never gets here — the process exits before
+        // responding. Reaching this point means it failed.
+        const data = await res.json().catch(() => ({}));
+        status.textContent = 'Update fehlgeschlagen: ' + (data.error || res.status);
+        applyBtn.disabled = false;
+    } catch (e) {
+        // A network error here can also mean success (the process exited
+        // mid-request) — leave the reassuring "restarting" message up
+        // rather than overwrite it with a scary-looking fetch error.
+    }
 }
 </script>
 </body>
