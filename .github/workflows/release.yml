@@ -110,8 +110,16 @@ jobs:
       - name: Stage release assets
         shell: bash
         run: |
+          echo "--- cmd/desktop/build/bin contents ---"
+          ls -la cmd/desktop/build/bin/
           cp cmd/desktop/build/bin/resourcebay-desktop.exe out/ResourceBay-Framework-Windows-portable.exe
-          cp cmd/desktop/build/bin/*-amd64-installer.exe out/ResourceBay-Framework-Windows-Setup.exe
+          installer=$(find cmd/desktop/build/bin -iname "*installer*.exe" | head -1)
+          if [ -z "$installer" ]; then
+            echo "::error::No NSIS installer .exe found in cmd/desktop/build/bin"
+            exit 1
+          fi
+          echo "Found installer: $installer"
+          cp "$installer" out/ResourceBay-Framework-Windows-Setup.exe
 
       - uses: actions/upload-artifact@v4
         with:
