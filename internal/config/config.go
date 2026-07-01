@@ -33,6 +33,9 @@ type Theme struct {
 	Primary         string `json:"primary"`
 	BgGradientStart string `json:"bgGradientStart"`
 	BgGradientEnd   string `json:"bgGradientEnd"`
+	TextMain        string `json:"textMain"`
+	TextMuted       string `json:"textMuted"`
+	TextDark        string `json:"textDark"`
 }
 
 // VAPI holds only the operator's own credentials. The API base URL is not
@@ -83,6 +86,9 @@ func DefaultSettings() Settings {
 			Primary:         "#f97316",
 			BgGradientStart: "#1e1e2f",
 			BgGradientEnd:   "#0f0f15",
+			TextMain:        "#f1f5f9",
+			TextMuted:       "#94a3b8",
+			TextDark:        "#64748b",
 		},
 		Feedback: Feedback{
 			RepoURL: "https://github.com/CaptainPM97/RB-Framework",

@@ -48,6 +48,9 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 				settings.Theme.Primary = r.FormValue("primary")
 				settings.Theme.BgGradientStart = r.FormValue("bgGradientStart")
 				settings.Theme.BgGradientEnd = r.FormValue("bgGradientEnd")
+				settings.Theme.TextMain = r.FormValue("textMain")
+				settings.Theme.TextMuted = r.FormValue("textMuted")
+				settings.Theme.TextDark = r.FormValue("textDark")
 				if err := a.Cfg.Save(settings); err != nil {
 					message, messageType = "Speichern fehlgeschlagen.", "error"
 					break

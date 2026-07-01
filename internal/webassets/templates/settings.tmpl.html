@@ -10,6 +10,9 @@
     --primary: {{.Theme.Primary}};
     --bg-gradient-start: {{.Theme.BgGradientStart}};
     --bg-gradient-end: {{.Theme.BgGradientEnd}};
+    --text-main: {{.Theme.TextMain}};
+    --text-muted: {{.Theme.TextMuted}};
+    --text-dark: {{.Theme.TextDark}};
 }
 .settings-section { margin-bottom: 24px; }
 .color-row { display: flex; align-items: center; gap: 10px; }
@@ -115,6 +118,24 @@
                     <label class="contact-label">Hintergrund (Ende)</label>
                     <div class="color-row">
                         <input type="color" name="bgGradientEnd" value="{{.Settings.Theme.BgGradientEnd}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Schriftfarbe (Haupttext)</label>
+                    <div class="color-row">
+                        <input type="color" name="textMain" value="{{.Settings.Theme.TextMain}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Schriftfarbe (gedämpft)</label>
+                    <div class="color-row">
+                        <input type="color" name="textMuted" value="{{.Settings.Theme.TextMuted}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Schriftfarbe (dunkel/Fußnoten)</label>
+                    <div class="color-row">
+                        <input type="color" name="textDark" value="{{.Settings.Theme.TextDark}}">
                     </div>
                 </div>
                 <button type="submit" class="submit-request-btn">Darstellung speichern</button>
