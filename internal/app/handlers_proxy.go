@@ -1,13 +1,13 @@
 package app
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"resourcebay-framework/internal/auth"
+	"resourcebay-framework/internal/vapi"
 )
 
 var proxyPathRe = regexp.MustCompile(`^[A-Za-z0-9_\-./]+$`)
@@ -85,19 +85,27 @@ func (a *App) handleProxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body []byte
+	injectSecret := false
 	if r.Method == http.MethodPost {
 		body, _ = io.ReadAll(r.Body)
 		if normalizedPath == "factory/options" {
-			var decoded map[string]any
-			if json.Unmarshal(body, &decoded) != nil || decoded == nil {
-				decoded = map[string]any{}
-			}
-			decoded["apiSecret"] = a.Cfg.Settings().VAPI.Secret
-			body, _ = json.Marshal(decoded)
+			injectSecret = true
 		}
 	}
 
-	status, respBody, err := a.VAPI.Do(r.Context(), r.Method, normalizedPath, body)
+	status, respBody, err := a.VAPI.Do(r.Context(), r.Method, normalizedPath, body, injectSecret)
+	if err == vapi.ErrRateLimited {
+		a.writeJSON(w, http.StatusTooManyRequests, map[string]any{
+			"statusCode": 429, "error": "Too Many Requests", "message": err.Error(),
+		})
+		return
+	}
+	if err == vapi.ErrNoKeys {
+		a.writeJSON(w, http.StatusBadGateway, map[string]any{
+			"statusCode": 502, "error": "Bad Gateway", "message": "Kein StateV-API-Key konfiguriert.",
+		})
+		return
+	}
 	if err != nil {
 		a.writeJSON(w, http.StatusBadGateway, map[string]any{
 			"statusCode": 502, "error": "Bad Gateway", "message": err.Error(),

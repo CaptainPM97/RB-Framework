@@ -58,8 +58,26 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 				message, messageType = "Darstellung gespeichert.", "success"
 
 			case "vapi":
-				settings.VAPI.Key = strings.TrimSpace(r.FormValue("vapiKey"))
-				settings.VAPI.Secret = strings.TrimSpace(r.FormValue("vapiSecret"))
+				labels := r.Form["label[]"]
+				apiKeys := r.Form["key[]"]
+				secrets := r.Form["secret[]"]
+				var keys []config.VAPIKey
+				for i, k := range apiKeys {
+					k = strings.TrimSpace(k)
+					if k == "" {
+						continue
+					}
+					label := ""
+					if i < len(labels) {
+						label = strings.TrimSpace(labels[i])
+					}
+					secret := ""
+					if i < len(secrets) {
+						secret = strings.TrimSpace(secrets[i])
+					}
+					keys = append(keys, config.VAPIKey{Label: label, Key: k, Secret: secret})
+				}
+				settings.VAPI.Keys = keys
 				if err := a.Cfg.Save(settings); err != nil {
 					message, messageType = "Speichern fehlgeschlagen.", "error"
 					break

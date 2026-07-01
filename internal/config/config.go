@@ -38,12 +38,20 @@ type Theme struct {
 	TextDark        string `json:"textDark"`
 }
 
-// VAPI holds only the operator's own credentials. The API base URL is not
-// configurable — it's a fixed address (see internal/vapi.BaseURL), not
-// per-operator data.
-type VAPI struct {
+// VAPIKey is one operator-entered credential pair. Label is just a
+// display hint (e.g. "Firma A") and not sent to the API.
+type VAPIKey struct {
+	Label  string `json:"label"`
 	Key    string `json:"key"`
 	Secret string `json:"secret"`
+}
+
+// VAPI holds the operator's own credentials — one or more, so a team with
+// several StateV accounts sees combined results across all of them (see
+// internal/vapi). The API base URL is not configurable — it's a fixed
+// address (see internal/vapi.BaseURL), not per-operator data.
+type VAPI struct {
+	Keys []VAPIKey `json:"keys"`
 }
 
 // Team holds the address of a shared team server (see internal/serverdist)
@@ -192,9 +200,15 @@ func (c *Config) Save(s Settings) error {
 	return nil
 }
 
-// HasVAPIKey reports whether the operator has entered a vAPI key yet.
+// HasVAPIKey reports whether the operator has entered at least one vAPI
+// key yet.
 func (c *Config) HasVAPIKey() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.settings.VAPI.Key != ""
+	for _, k := range c.settings.VAPI.Keys {
+		if k.Key != "" {
+			return true
+		}
+	}
+	return false
 }

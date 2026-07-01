@@ -154,17 +154,35 @@
                 <label class="contact-label">API Base-URL</label>
                 <div class="text-input" style="color:var(--text-dark);cursor:default">{{.VAPIBaseURL}}</div>
             </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:11px;line-height:1.5;margin-bottom:12px">
+                Mehrere Keys möglich (z.B. je ein Key pro Firmen-Account) — Ergebnisse werden automatisch über alle Keys
+                zusammengeführt. Jeder Key ist einzeln auf maximal <strong>10 Anfragen pro Minute</strong> begrenzt; bei
+                mehreren Keys steigt der effektive Gesamtdurchsatz entsprechend.
+            </p>
             <form method="post">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <input type="hidden" name="section" value="vapi">
-                <div class="form-row">
-                    <label class="contact-label">API-Key (Bearer)</label>
-                    <input type="password" name="vapiKey" class="text-input" value="{{.Settings.VAPI.Key}}" autocomplete="off">
+                <div id="vapi-keys-list">
+                    {{range .Settings.VAPI.Keys}}
+                    <div class="vapi-key-row" style="border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:10px">
+                        <div class="form-row">
+                            <label class="contact-label">Bezeichnung</label>
+                            <input type="text" name="label[]" class="text-input" value="{{.Label}}" placeholder="z.B. Firma A" maxlength="60">
+                        </div>
+                        <div class="form-row">
+                            <label class="contact-label">API-Key (Bearer)</label>
+                            <input type="password" name="key[]" class="text-input" value="{{.Key}}" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label class="contact-label">API-Secret (optional)</label>
+                            <input type="password" name="secret[]" class="text-input" value="{{.Secret}}" autocomplete="off">
+                        </div>
+                        <button type="button" class="select-all-btn" style="color:var(--red)" onclick="this.closest('.vapi-key-row').remove()">✕ Entfernen</button>
+                    </div>
+                    {{end}}
                 </div>
-                <div class="form-row">
-                    <label class="contact-label">API-Secret (optional)</label>
-                    <input type="password" name="vapiSecret" class="text-input" value="{{.Settings.VAPI.Secret}}" autocomplete="off">
-                </div>
+                <button type="button" class="hero-btn hero-btn-secondary" style="margin-bottom:14px" onclick="addVapiKeyRow()">+ Weiteren Key hinzufügen</button>
+                <br>
                 <button type="submit" class="submit-request-btn">API-Zugang speichern</button>
             </form>
         </div>
@@ -318,5 +336,29 @@
         <div class="footer-status"><span class="system-dot"></span> Einstellungen</div>
     </div>
 </footer>
+<script>
+function addVapiKeyRow() {
+    const list = document.getElementById('vapi-keys-list');
+    const row = document.createElement('div');
+    row.className = 'vapi-key-row';
+    row.style.cssText = 'border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:10px';
+    row.innerHTML = `
+        <div class="form-row">
+            <label class="contact-label">Bezeichnung</label>
+            <input type="text" name="label[]" class="text-input" placeholder="z.B. Firma A" maxlength="60">
+        </div>
+        <div class="form-row">
+            <label class="contact-label">API-Key (Bearer)</label>
+            <input type="password" name="key[]" class="text-input" autocomplete="off">
+        </div>
+        <div class="form-row">
+            <label class="contact-label">API-Secret (optional)</label>
+            <input type="password" name="secret[]" class="text-input" autocomplete="off">
+        </div>
+        <button type="button" class="select-all-btn" style="color:var(--red)" onclick="this.closest('.vapi-key-row').remove()">✕ Entfernen</button>
+    `;
+    list.appendChild(row);
+}
+</script>
 </body>
 </html>
