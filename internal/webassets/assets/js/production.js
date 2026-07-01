@@ -1596,20 +1596,37 @@ function renderBestellung() {
                 const isEditing = bestellEditId === b.id;
                 const date = new Date(b.savedAt||b.updatedAt||Date.now()).toLocaleString('de-DE',
                     {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                const n = (b.items||[]).length;
-                return `<div class="prod-saved-bestellung${isEditing ? ' prod-saved-active' : ''}">
+                const bItems = b.items || [];
+                const n = bItems.length;
+                const detailRows = bItems.map(it => {
+                    const p = products.find(x => x.id === it.productId);
+                    const qty = Math.max(1, it.qty || 1);
+                    const vkUnit = p ? _calcVK(p.id) : 0;
+                    return `<div class="prod-saved-detail-row">
+                        <span>${escapeHtml(p?.name || 'Unbekanntes Produkt')}</span>
+                        <span style="color:var(--text-muted)">${prodFmtN(qty)} ${escapeHtml(p?.einheit||'Stück')}</span>
+                        <span style="font-weight:600">${prodFmtMoney(vkUnit * qty)}</span>
+                    </div>`;
+                }).join('');
+                return `<div class="prod-saved-bestellung-wrap">
+                <div class="prod-saved-bestellung${isEditing ? ' prod-saved-active' : ''}" onclick="toggleBestellDetail(event,'${escapeHtml(b.id)}')" style="cursor:pointer">
                     <div style="min-width:0;flex:1">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                            <span class="prod-saved-chevron" id="bestell-chevron-${escapeHtml(b.id)}">▸</span>
                             ${b.rabatt ? `<span style="font-size:11px;background:rgba(99,102,241,.15);color:var(--primary);padding:1px 6px;border-radius:4px">−${b.rabatt}%</span>` : ''}
                             ${isEditing ? `<span style="font-size:11px;background:rgba(99,102,241,.2);color:var(--primary);padding:1px 6px;border-radius:4px">✏️ wird bearbeitet</span>` : ''}
                         </div>
                         <span class="prod-saved-meta">${date} · ${n} Artikel · <strong style="color:var(--text-main)">${prodFmtMoney(bVKnetto)}</strong></span>
                     </div>
-                    <div class="prod-saved-actions">
+                    <div class="prod-saved-actions" onclick="event.stopPropagation()">
                         <button class="icon-btn" onclick="editBestellung('${escapeHtml(b.id)}')" title="Bearbeiten">✏️</button>
                         <button class="hero-btn prod-lieferung-btn" onclick="confirmLieferung('${escapeHtml(b.id)}')">✅ Lieferung</button>
-                        <button class="icon-btn cv-del-btn" onclick="deleteBestellung('${escapeHtml(b.id)}')" title="Löschen">🗑</button>
+                        <button class="icon-btn cv-del-btn" onclick="deleteBestellung('${escapeHtml(b.id)}', this)" title="Löschen">🗑</button>
                     </div>
+                </div>
+                <div class="prod-saved-detail hidden" id="bestell-detail-${escapeHtml(b.id)}">
+                    ${detailRows || '<div class="info-text" style="padding:8px 0">Keine Artikel.</div>'}
+                </div>
                 </div>`;
             }).join('')}
         </div>`;
@@ -1754,14 +1771,53 @@ async function confirmLieferung(id) {
     } catch (e) { alert('Fehler: ' + e.message); }
 }
 
-async function deleteBestellung(id) {
-    if (!confirm('Bestellung wirklich löschen?')) return;
+// Zwei-Klick-Bestätigung statt window.confirm(): native Dialoge sind in
+// eingebetteten WebViews (Desktop-App) nicht immer zuverlässig verfügbar,
+// ein zweiter Klick auf denselben Button ist unabhängig davon robust.
+let _bestellDeletePending = null; // { id, btn, timer }
+
+function deleteBestellung(id, btn) {
+    if (_bestellDeletePending && _bestellDeletePending.id === id) {
+        clearTimeout(_bestellDeletePending.timer);
+        _bestellDeletePending = null;
+        _reallyDeleteBestellung(id);
+        return;
+    }
+    if (_bestellDeletePending) {
+        _resetBestellDeleteBtn(_bestellDeletePending.btn);
+        clearTimeout(_bestellDeletePending.timer);
+    }
+    _resetBestellDeleteBtn(btn, true);
+    _bestellDeletePending = {
+        id, btn,
+        timer: setTimeout(() => { _bestellDeletePending = null; _resetBestellDeleteBtn(btn); }, 3000),
+    };
+}
+
+function _resetBestellDeleteBtn(btn, armed) {
+    if (!btn) return;
+    btn.textContent = armed ? '❗' : '🗑';
+    btn.title = armed ? 'Nochmal klicken zum Löschen' : 'Löschen';
+    btn.classList.toggle('cv-del-btn-confirm', !!armed);
+}
+
+async function _reallyDeleteBestellung(id) {
     if (bestellEditId === id) { bestellEditId = null; bestellState = { kundenname: '', rabatt: 0, items: [] }; }
     try {
         await prodPost({ action: 'delete_bestellung', id });
         productionData.bestellungen = (productionData.bestellungen || []).filter(b => b.id !== id);
         renderBestellung();
     } catch (e) { alert('Fehler: ' + e.message); }
+}
+
+function toggleBestellDetail(evt, id) {
+    if (evt.target.closest('.prod-saved-actions')) return;
+    const detail = document.getElementById(`bestell-detail-${id}`);
+    const chevron = document.getElementById(`bestell-chevron-${id}`);
+    if (!detail) return;
+    const willShow = detail.classList.contains('hidden');
+    detail.classList.toggle('hidden', !willShow);
+    if (chevron) chevron.textContent = willShow ? '▾' : '▸';
 }
 
 // ── Einkäufe (Rohstoff-Bestellungen erfassen) ──────────────────
