@@ -80,6 +80,21 @@ jobs:
         run: choco install nsis -y
         shell: pwsh
 
+      # Chocolatey's PATH update doesn't always reach the current job
+      # without this: makensis would silently be unavailable to the wails
+      # build step below, which does NOT fail the build if NSIS packaging
+      # can't run — it just quietly produces no installer.
+      - name: Ensure makensis is on PATH
+        shell: pwsh
+        run: |
+          $nsis = Get-ChildItem -Path "C:\Program Files*\NSIS\makensis.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $nsis) {
+            Write-Error "makensis.exe not found after NSIS install"
+            exit 1
+          }
+          echo $nsis.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & $nsis.FullName -VERSION
+
       - name: Resolve version
         id: version
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
