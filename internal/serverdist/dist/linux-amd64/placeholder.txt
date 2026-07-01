@@ -1,0 +1,1 @@
+Platzhalter — wird durch 'make server-dist' mit der echten statev-server Binary ersetzt.

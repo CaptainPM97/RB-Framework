@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benutzerverwaltung – {{.Branding.AppName}}</title>
+<link rel="stylesheet" href="{{asset "css/style.css"}}">
+<style>
+:root {
+    --primary: {{.Theme.Primary}};
+    --bg-gradient-start: {{.Theme.BgGradientStart}};
+    --bg-gradient-end: {{.Theme.BgGradientEnd}};
+}
+.perm-groups { display:flex; flex-direction:column; gap:16px; }
+.perm-group { border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
+.perm-group-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--bg-page);
+    font-size:12px; font-weight:600; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:.05em; cursor:pointer;
+    user-select:none;
+}
+.perm-group-header:hover { background:var(--bg-card); }
+.perm-group-body { padding:10px 14px; display:flex; flex-direction:column; gap:6px; }
+.perm-row { display:flex; align-items:center; gap:10px; font-size:13px; }
+.perm-row input[type=checkbox] { width:16px; height:16px; cursor:pointer; accent-color:var(--primary); }
+.perm-row label { cursor:pointer; flex:1; }
+.perm-row label span { font-size:11px; color:var(--text-muted); margin-left:4px; }
+.user-section { border:1px solid var(--border-color); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.user-section-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; background:var(--bg-page); cursor:pointer;
+}
+.user-section-header:hover { background:var(--bg-card); }
+.user-section-body { padding:18px; border-top:1px solid var(--border-color); }
+.perm-cols { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+.select-all-btn { font-size:11px; color:var(--primary); cursor:pointer; background:none; border:none; padding:0; }
+.select-all-btn:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-container">
+        <div class="logo-section">
+            <div class="logo-icon">{{.Branding.LogoInitials}}</div>
+            <div>
+                <div class="logo-text-title">{{.Branding.AppName}}</div>
+                <div class="logo-text-sub">Benutzerverwaltung</div>
+            </div>
+        </div>
+        <nav>
+            <a href="/index.php" class="nav-link">← Zurück zur Übersicht</a>
+            <a href="/settings" class="nav-link">Einstellungen</a>
+        </nav>
+        <div class="right-section">
+            <span class="user-badge">👤 {{.Me.Username}} ({{.Me.Role}})</span>
+            <a href="/logout.php" class="key-config-btn">Abmelden</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <h1 class="section-heading">Benutzer &amp; Berechtigungen</h1>
+
+    {{if .Message}}
+        <div class="grid-card" style="margin-bottom:24px;border-color:{{if eq .MessageType "error"}}var(--red){{else}}var(--emerald){{end}}">
+            <div class="info-text" style="color:{{if eq .MessageType "error"}}var(--red){{else}}var(--emerald){{end}};padding:0">{{.Message}}</div>
+        </div>
+    {{end}}
+
+    <div class="bento-grid options-grid">
+        <div class="grid-card col-span-2">
+            <div class="card-header">
+                <div class="card-title">Vorhandene Benutzer</div>
+                <div class="card-icon">👥</div>
+            </div>
+            <div class="data-list" style="padding:0">
+                {{range .Users}}
+                <div class="user-section">
+                    <div class="user-section-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div class="logo-icon" style="width:32px;height:32px;font-size:13px">{{.Initials}}</div>
+                            <div>
+                                <div style="font-weight:600;font-size:14px">{{.Username}}</div>
+                                <div style="font-size:11px;color:var(--text-muted)">{{if .IsAdmin}}⭐ Admin{{else}}Benutzer{{end}} · {{.PermCount}} Berechtigungen</div>
+                            </div>
+                        </div>
+                        <span style="color:var(--text-muted);font-size:18px">›</span>
+                    </div>
+                    <div class="user-section-body" style="display:none">
+
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                            <form method="post" style="display:flex;gap:8px;align-items:center">
+                                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                                <input type="hidden" name="action" value="update_role">
+                                <input type="hidden" name="username" value="{{.Username}}">
+                                <label style="font-size:13px;color:var(--text-muted)">Rolle:</label>
+                                <select name="role" class="contact-select" style="width:auto;font-size:12px" onchange="this.form.submit()">
+                                    <option value="user" {{if not .IsAdmin}}selected{{end}}>Benutzer</option>
+                                    <option value="admin" {{if .IsAdmin}}selected{{end}}>Admin</option>
+                                </select>
+                            </form>
+                            <form method="post" style="display:flex;gap:8px;align-items:center">
+                                <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                                <input type="hidden" name="action" value="reset_password">
+                                <input type="hidden" name="username" value="{{.Username}}">
+                                <input type="password" name="password" class="text-input" placeholder="Neues Passwort" style="width:180px" required minlength="6">
+                                <button type="submit" class="hero-btn hero-btn-secondary" style="white-space:nowrap">Ändern</button>
+                            </form>
+                        </div>
+
+                        {{if .IsAdmin}}
+                            <div style="padding:12px;background:var(--bg-page);border-radius:8px;font-size:13px;color:var(--text-muted);margin-bottom:16px">
+                                ⭐ Admin hat automatisch Zugriff auf alle Bereiche — Einzelberechtigungen werden ignoriert.
+                            </div>
+                        {{else}}
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <input type="hidden" name="action" value="set_permissions">
+                            <input type="hidden" name="username" value="{{.Username}}">
+
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                                <div style="font-size:13px;font-weight:600">Berechtigungen</div>
+                                <div style="display:flex;gap:8px">
+                                    <button type="button" class="select-all-btn" onclick="setAllPerms('{{.Username}}',true)">Alle auswählen</button>
+                                    <button type="button" class="select-all-btn" onclick="setAllPerms('{{.Username}}',false)">Alle abwählen</button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;flex-direction:column;gap:18px" id="perm-cols-{{.Username}}">
+                                {{range .Modules}}
+                                <div>
+                                    <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border-color)">
+                                        {{.Name}}
+                                    </div>
+                                    <div class="perm-cols">
+                                        {{range .Groups}}
+                                        <div class="perm-group">
+                                            <div class="perm-group-header" onclick="toggleGroup(this)">
+                                                <span>{{.Name}}</span>
+                                                <button type="button" class="select-all-btn" onclick="event.stopPropagation();setGroupPerms(this,true)">Alle</button>
+                                            </div>
+                                            <div class="perm-group-body">
+                                                {{range .Rows}}
+                                                <div class="perm-row">
+                                                    <input type="checkbox" name="perms[]"
+                                                        id="p-{{$.CSRFToken}}-{{.Key}}"
+                                                        value="{{.Key}}"
+                                                        {{if .Checked}}checked{{end}}>
+                                                    <label for="p-{{$.CSRFToken}}-{{.Key}}">
+                                                        {{.ShortLabel}}
+                                                        <span>{{.Key}}</span>
+                                                    </label>
+                                                </div>
+                                                {{end}}
+                                            </div>
+                                        </div>
+                                        {{end}}
+                                    </div>
+                                </div>
+                                {{end}}
+                            </div>
+
+                            <button type="submit" class="hero-btn" style="margin-top:16px;width:100%">💾 Berechtigungen speichern</button>
+                        </form>
+                        {{end}}
+
+                        {{if not .IsMe}}
+                        <form method="post" onsubmit="return confirm('Benutzer wirklich löschen?')" style="margin-top:12px">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <input type="hidden" name="action" value="delete_user">
+                            <input type="hidden" name="username" value="{{.Username}}">
+                            <button type="submit" class="hero-btn" style="background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red);width:100%">Benutzer löschen</button>
+                        </form>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="grid-card col-span-1">
+            <div class="card-header">
+                <div class="card-title">Neuen Benutzer anlegen</div>
+                <div class="card-icon">➕</div>
+            </div>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="action" value="create_user">
+                <div class="form-row">
+                    <label class="contact-label">Benutzername</label>
+                    <input type="text" name="username" class="text-input" required pattern="[a-zA-Z0-9_.\-]{3,32}">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Passwort</label>
+                    <input type="password" name="password" class="text-input" required minlength="6">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Rolle</label>
+                    <select name="role" class="contact-select">
+                        <option value="user">Benutzer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-request-btn">Benutzer anlegen</button>
+            </form>
+            <p class="modal-label-text" style="margin-top:16px;color:var(--text-dark);font-size:12px;line-height:1.5">
+                Nach dem Anlegen kannst du links die Berechtigungen zuweisen. Admins haben automatisch Zugriff auf alle Bereiche.
+            </p>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-container">
+        <div>&copy; {{.Year}} {{.Branding.AppName}}</div>
+        <div class="footer-status"><span class="system-dot"></span> Benutzerverwaltung</div>
+    </div>
+</footer>
+
+<script>
+function toggleGroup(header) {
+    const body = header.nextElementSibling;
+    body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+function setAllPerms(username, checked) {
+    document.querySelectorAll(`#perm-cols-${CSS.escape(username)} input[type=checkbox]`)
+        .forEach(cb => cb.checked = checked);
+}
+function setGroupPerms(btn, checked) {
+    btn.closest('.perm-group').querySelectorAll('input[type=checkbox]')
+        .forEach(cb => cb.checked = checked);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Branding.AppName}}</title>
+<link rel="stylesheet" href="{{asset "css/style.css"}}">
+<style>
+:root {
+    --primary: {{.Theme.Primary}};
+    --bg-gradient-start: {{.Theme.BgGradientStart}};
+    --bg-gradient-end: {{.Theme.BgGradientEnd}};
+}
+</style>
+<script>
+    window.RB_PERMISSIONS = {
+        isAdmin:        {{.EffectiveIsAdmin}},
+        websites:       {{.CanWebsites}},
+        markt:          {{.CanMarkt}},
+        lager:          {{.CanLager}},
+        bank:           {{.CanBank}},
+        optionen:       {{.CanOptionen}},
+        optionenEdit:   {{.CanOptEdit}},
+        produktion:     {{.CanProd}},
+        produktionEdit: {{.CanProdEdit}},
+        rohstoffeEdit:  {{.CanRsEdit}},
+        vertraege:      {{.CanVertr}},
+        vertraegeCreate:{{.CanVertrCreate}},
+        vertraegeEdit:  {{.CanVertrEdit}},
+        vorlagenEdit:   {{.CanVorlagenEdit}},
+        fahrzeuge:      {{.CanFahrzeuge}},
+        fahrzeugeEdit:  {{.CanFahrzEdit}},
+        firmen:         {{.CanFirmen}},
+        firmenEdit:     {{.CanFirmEdit}},
+        raw:            {{.RawPermsJSON}},
+    };
+</script>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loader-container">
+            <div class="loader-logo">{{.Branding.LogoInitials}}</div>
+            <div class="loader-text">{{.Branding.AppName}}</div>
+            <div class="loader-sub" id="loader-dynamic-text">Initialisiere Systeme...</div>
+            <div class="loader-bar-bg">
+                <div class="loader-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="header-container">
+            <div class="logo-section">
+                <div class="logo-icon">{{.Branding.LogoInitials}}</div>
+                <div>
+                    <div class="logo-text-title">{{.Branding.AppName}}</div>
+                    <div class="logo-text-sub">{{.Branding.Subtitle}}</div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                {{if .IsImpersonating}}
+                    <span class="user-badge" style="color:var(--amber)">👁 {{.Me.Username}}</span>
+                {{else}}
+                    <span class="user-badge">👤 {{.Me.Username}}</span>
+                {{end}}
+                <div class="nav-wrapper">
+                    <button class="nav-toggle" id="nav-toggle" aria-label="Menü">&#9776;</button>
+                    <nav id="main-nav">
+                        <a href="#" class="nav-link active" data-target="page-start">Startseite</a>
+                        {{if .CanMarkt}}<a href="#" class="nav-link" data-target="page-markt">Marktangebote</a>{{end}}
+                        {{if .CanLager}}<a href="#" class="nav-link" data-target="page-lager">Lagerbestände</a>{{end}}
+                        {{if .CanBank}}<a href="#" class="nav-link" data-target="page-bank">Bankbestände</a>{{end}}
+                        {{if .CanProd}}<a href="#" class="nav-link" data-target="page-produktion">Produktion</a>{{end}}
+                        {{if .CanVertr}}<a href="#" class="nav-link" data-target="page-vertraege">Verträge</a>{{end}}
+                        {{if .CanOptionen}}<a href="#" class="nav-link" data-target="page-optionen">Optionen</a>{{end}}
+                        <div class="nav-sep"></div>
+                        <a href="#" class="nav-link nav-action" onclick="location.reload();return false;" title="Lädt die Seite neu und ruft alle Markt-/Lager-/Bank-/Produktionsdaten frisch ab">🔄 Aktualisieren</a>
+                        {{if .IsAdmin}}
+                            <a href="/admin.php" class="nav-link nav-action">⚙️ Benutzer verwalten</a>
+                            <a href="/settings" class="nav-link nav-action">🎨 Einstellungen</a>
+                            <div style="padding:6px 8px">
+                                <form method="post" action="/impersonate.php" style="display:flex;flex-direction:column;gap:6px">
+                                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                                    <input type="hidden" name="action" value="{{if .IsImpersonating}}stop{{else}}start{{end}}">
+                                    {{if .IsImpersonating}}
+                                        <button type="submit" class="nav-link nav-action" style="text-align:left;border:none;background:rgba(245,158,11,.1);color:var(--amber);border-radius:8px;cursor:pointer;width:100%">
+                                            ↩ Zurück zu {{.RealMe.Username}}
+                                        </button>
+                                    {{else}}
+                                        <label style="font-size:11px;color:var(--text-dark);padding:0 6px">👁 Als Nutzer ansehen:</label>
+                                        <select name="username" class="contact-select" style="font-size:12px;width:100%" onchange="this.form.submit()">
+                                            <option value="">— auswählen —</option>
+                                            {{range .OtherUsers}}
+                                                <option value="{{.Username}}">{{.Username}} ({{.Role}})</option>
+                                            {{end}}
+                                        </select>
+                                    {{end}}
+                                </form>
+                            </div>
+                        {{end}}
+                        <a href="/logout.php" class="nav-link nav-action">Abmelden</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {{if .IsImpersonating}}
+    <div style="background:rgba(245,158,11,.12);border-bottom:1px solid rgba(245,158,11,.3);padding:8px 24px;display:flex;align-items:center;gap:12px;font-size:13px">
+        <span style="color:var(--amber)">👁 Du siehst die Ansicht von <strong>{{.Me.Username}}</strong></span>
+        <form method="post" action="/impersonate.php" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <input type="hidden" name="action" value="stop">
+            <button type="submit" style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:var(--amber);padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer">
+                ↩ Zurück zu {{.RealMe.Username}}
+            </button>
+        </form>
+    </div>
+    {{end}}
+
+    <main>
+
+        <section id="page-start" class="content-section active">
+            <div class="hero-card">
+                <div class="hero-badge">🏢 {{.Branding.AppName}}</div>
+                <h1 class="hero-title">Backoffice für {{.Branding.AppName}}</h1>
+                <p class="hero-subtitle">Zentrale Übersicht über Marktangebote, Page-Options und Lagerbestände aller eigenen Firmen.</p>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-firmen">–</div>
+                    <div class="stat-label">Firmen im Besitz</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-firmen-vermietet">–</div>
+                    <div class="stat-label">Firmen vermietet</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-fahrzeuge">–</div>
+                    <div class="stat-label">Fahrzeuge (gesamt)</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-fahrzeuge-vermietet">–</div>
+                    <div class="stat-label">Fahrzeuge vermietet</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-offers">–</div>
+                    <div class="stat-label">Marktangebote ¹</div>
+                </div>
+                {{if .CanLager}}
+                    <div class="stat-block">
+                        <div class="stat-value" id="stat-lagerweight">–</div>
+                        <div class="stat-label">Lagergewicht ¹</div>
+                    </div>
+                    <div class="stat-block">
+                        <div class="stat-value" id="stat-machineweight">–</div>
+                        <div class="stat-label">Maschinengewicht ¹</div>
+                    </div>
+                {{end}}
+                {{if .CanBank}}
+                <div class="stat-block">
+                    <div class="stat-value" id="stat-bankbalance">–</div>
+                    <div class="stat-label">Bankguthaben gesamt</div>
+                </div>
+                {{end}}
+            </div>
+            <div class="stats-footnote">¹ Nur Firmen ohne aktiven Miet-/Pachtvertrag</div>
+
+            <h2 class="section-heading">Module</h2>
+            <div class="services-grid">
+                {{if .CanMarkt}}
+                <div class="service-card" data-target="page-markt">
+                    <div class="service-icon">⚖️</div>
+                    <div class="service-title">Marktangebote</div>
+                    <p class="service-text">An- und Verkaufsangebote aller Firmen einsehen und nach Items durchsuchen.</p>
+                    <div class="service-link">Zu den Marktangeboten →</div>
+                </div>
+                {{end}}
+                {{if .CanVertr}}
+                <div class="service-card" data-target="page-vertraege">
+                    <div class="service-icon">📄</div>
+                    <div class="service-title">Vertragsmanagement</div>
+                    <p class="service-text">Miet- und Pachtverträge verwalten, Rechtstexte pflegen, Einnahmen zuordnen.</p>
+                    <div class="service-link">Zu den Verträgen →</div>
+                </div>
+                {{end}}
+                {{if .CanProd}}
+                <div class="service-card" data-target="page-produktion">
+                    <div class="service-icon">🏭</div>
+                    <div class="service-title">Produktion</div>
+                    <p class="service-text">Produkte, Exportprodukte und Rohstoffe verwalten, Kalkulationen einsehen.</p>
+                    <div class="service-link">Zur Produktion →</div>
+                </div>
+                {{end}}
+                {{if .CanOptionen}}
+                    <div class="service-card" data-target="page-optionen">
+                        <div class="service-icon">📝</div>
+                        <div class="service-title">Optionen-Editor</div>
+                        <p class="service-text">Page-Options einer Firma abrufen und bearbeiten, inkl. Vorschaubild-Lookup.</p>
+                        <div class="service-link">Zum Optionen-Editor →</div>
+                    </div>
+                {{end}}
+                {{if .CanLager}}
+                    <div class="service-card" data-target="page-lager">
+                        <div class="service-icon">📦</div>
+                        <div class="service-title">Lagerbestände</div>
+                        <p class="service-text">Lager- und Maschinenbestände aller Firmen, inkl. freiem Restplatz pro Standort.</p>
+                        <div class="service-link">Zu den Lagerbeständen →</div>
+                    </div>
+                {{end}}
+                {{if .CanBank}}
+                    <div class="service-card" data-target="page-bank">
+                        <div class="service-icon">🏦</div>
+                        <div class="service-title">Bankbestände</div>
+                        <p class="service-text">Kontobestände aller Firmen und des Hotels auf einen Blick.</p>
+                        <div class="service-link">Zu den Bankbeständen →</div>
+                    </div>
+                {{end}}
+            </div>
+
+            <div class="grid-card" id="firmenliste-card" style="margin-top:32px;">
+                <div class="card-header">
+                    <div class="card-title">Eigene Firmen</div>
+                    <div class="card-icon">🏢</div>
+                </div>
+                <div class="data-list" id="firmenliste-container">
+                    <div class="info-text">Lade Firmen...</div>
+                </div>
+            </div>
+
+            {{if .CanWebsites}}
+            <div class="start-link-row" style="display:flex;gap:12px;margin-top:24px">
+                {{if .Branding.Website1URL}}
+                <a href="{{.Branding.Website1URL}}" target="_blank" rel="noopener"
+                   class="hero-btn" style="display:flex;align-items:center;gap:8px;text-decoration:none;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-color)">
+                    🌐 {{.Branding.Website1Label}}
+                </a>
+                {{end}}
+                {{if .Branding.Website2URL}}
+                <a href="{{.Branding.Website2URL}}" target="_blank" rel="noopener"
+                   class="hero-btn" style="display:flex;align-items:center;gap:8px;text-decoration:none;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-color)">
+                    🛠️ {{.Branding.Website2Label}}
+                </a>
+                {{end}}
+            </div>
+            {{end}}
+        </section>
+
+        <section id="page-markt" class="content-section">
+            <div class="toolbar toolbar-col">
+                <div class="firma-chip-row" id="markt-firma-chips"></div>
+                <input type="text" id="markt-search-input" class="market-search-input toolbar-search" placeholder="Item suchen...">
+            </div>
+            <div class="full-width-list" id="markt-container">
+                <div class="grid-card"><div class="info-text">Lade Marktangebote...</div></div>
+            </div>
+            <div class="grid-card" id="markt-no-results" style="display:none;">
+                <div class="info-text">Keine Items gefunden.</div>
+            </div>
+        </section>
+
+        {{if .CanOptionen}}
+        <section id="page-optionen" class="content-section">
+
+            <div class="grid-card" style="margin-bottom:24px;">
+                <div class="toolbar opt-top-toolbar" style="margin-bottom:0;">
+                    <select class="contact-select toolbar-select" id="options-firma-select">
+                        <option value="">Firma auswählen...</option>
+                    </select>
+                    <button class="hero-btn hero-btn-secondary" id="pic-open-btn" type="button">🖼️ Bild-Host öffnen</button>
+                </div>
+            </div>
+
+            <div class="opt-split-layout">
+
+                {{if .CanOptEdit}}
+                <div class="opt-editor-col">
+                    <div class="grid-card opt-editor-sticky" id="options-editor-card">
+                        <div class="card-header">
+                            <div class="card-title">Slot <span id="options-editor-slot-label">–</span></div>
+                            <div class="card-icon">✏️</div>
+                        </div>
+
+                        <div id="options-editor-empty-state" class="info-text" style="text-align:center; padding:32px 0;">
+                            ← Option auswählen
+                        </div>
+
+                        <form id="options-editor-form" style="display:none;">
+                            <div class="form-row">
+                                <label class="contact-label">Titel (max. 64 Zeichen)</label>
+                                <input type="text" id="option-title-input" maxlength="64" class="text-input">
+                            </div>
+                            <div class="form-row">
+                                <label class="contact-label">Text</label>
+                                <textarea id="option-text-input" rows="7" class="text-input textarea-input"></textarea>
+                            </div>
+                            <div class="form-row">
+                                <label class="contact-label">Bild</label>
+                                <div class="image-insert-row">
+                                    <span class="image-insert-prefix">…/images/</span>
+                                    <input type="text" id="option-image-id-input" class="text-input image-insert-input" placeholder="Bild-ID.jpg">
+                                </div>
+                            </div>
+                            <div class="opt-last-saved">
+                                Letzte Speicherung: <span id="option-last-updated">–</span>
+                            </div>
+                            <button type="submit" class="submit-request-btn" id="option-save-btn">💾 Speichern</button>
+                            <div class="info-text" id="option-save-status" style="display:none;"></div>
+                        </form>
+                    </div>
+                </div>
+                {{end}}
+
+                <div class="opt-cards-col" style="{{if not .CanOptEdit}}width:100%{{end}}">
+                    <div id="options-cards-container" class="opt-cards-grid-2col">
+                        <div class="info-text" style="grid-column:1/-1;">Bitte zuerst eine Firma auswählen.</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+        {{end}}
+
+        {{if .CanLager}}
+        <section id="page-lager" class="content-section">
+            <div class="toolbar toolbar-col">
+                <div class="firma-chip-row" id="lager-firma-chips"></div>
+                <input type="text" id="lager-search-input" class="market-search-input toolbar-search" placeholder="Item suchen...">
+            </div>
+            <div class="full-width-list" id="lager-container">
+                <div class="grid-card"><div class="info-text">Lade Lagerbestände...</div></div>
+            </div>
+            <div class="grid-card" id="lager-no-results" style="display:none;">
+                <div class="info-text">Keine Items gefunden.</div>
+            </div>
+        </section>
+        {{end}}
+
+        {{if .CanBank}}
+        <section id="page-bank" class="content-section">
+            <div class="toolbar toolbar-col">
+                <div class="firma-chip-row" id="bank-firma-chips"></div>
+            </div>
+            <div class="full-width-list" id="bank-container">
+                <div class="grid-card"><div class="info-text">Lade Bankkonten...</div></div>
+            </div>
+        </section>
+        {{end}}
+
+        <section id="page-produktion" class="content-section">
+            <div class="prod-tab-bar">
+                <button class="prod-tab-btn prod-tab-active" data-prod-tab="produkte">🏭 Produkte</button>
+                <button class="prod-tab-btn" data-prod-tab="rohstoffe">📦 Rohstoffe</button>
+                <button class="prod-tab-btn" data-prod-tab="kalkulator">🔢 Kalkulator</button>
+                <button class="prod-tab-btn" data-prod-tab="bestellung">🛒 Bestellung</button>
+                <button class="prod-tab-btn" data-prod-tab="einkaeufe">📥 Einkäufe</button>
+            </div>
+            <div class="prod-pane" id="prod-pane-produkte"></div>
+            <div class="prod-pane" id="prod-pane-rohstoffe"  style="display:none"></div>
+            <div class="prod-pane" id="prod-pane-kalkulator" style="display:none"></div>
+            <div class="prod-pane" id="prod-pane-bestellung" style="display:none"></div>
+            <div class="prod-pane" id="prod-pane-einkaeufe"  style="display:none"></div>
+        </section>
+
+        <section id="page-vertraege" class="content-section">
+
+            <div class="vtab-bar">
+                <button class="vtab active" data-vtab="vertraege">📋 Verträge</button>
+                <button class="vtab" data-vtab="vorlagen">📄 Vorlagen</button>
+                <button class="vtab" data-vtab="fahrzeuge">🚗 Fahrzeuge</button>
+                <button class="vtab" data-vtab="firmenconfig">🏭 Firmenkonfiguration</button>
+                <button class="vtab" data-vtab="zimmer" id="vtab-btn-zimmer" style="display:none">🛏 Zimmer</button>
+            </div>
+
+            <div id="vtab-vertraege" class="vtab-pane">
+
+                <div id="cv-dashboard" class="cv-dashboard"></div>
+
+                <div class="vtab-toolbar" style="margin-top:16px">
+                    <div class="cv-filter-row">
+                        <button class="cv-filter-chip active" data-filter="active">Aktiv</button>
+                        <button class="cv-filter-chip" data-filter="upcoming">Bevorstehend</button>
+                        <button class="cv-filter-chip" data-filter="expired">Abgelaufen</button>
+                        <button class="cv-filter-chip" data-filter="terminated">Gekündigt</button>
+                        <button class="cv-filter-chip" data-filter="all">Alle</button>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="cv-contract-search" class="cv-search-input" placeholder="🔍 Mieter, Objekt suchen…">
+                        {{if .CanVertrCreate}}
+                        <button class="hero-btn" type="button" id="btn-new-contract">➕ Neuer Vertrag</button>
+                        {{end}}
+                    </div>
+                </div>
+
+                <div id="contracts-list"></div>
+            </div>
+
+            <div id="vtab-vorlagen" class="vtab-pane hidden">
+                <div class="vtab-toolbar">
+                    <div></div>
+                    {{if .CanVorlagenEdit}}
+                    <button class="hero-btn" type="button" id="btn-new-template">➕ Neue Vorlage</button>
+                    {{end}}
+                </div>
+                <div id="templates-list"></div>
+            </div>
+
+            <div id="vtab-fahrzeuge" class="vtab-pane hidden">
+                <div class="vtab-toolbar">
+                    <div></div>
+                    {{if .CanFahrzEdit}}
+                    <button class="hero-btn" type="button" id="btn-new-vehicle">➕ Fahrzeug eintragen</button>
+                    {{end}}
+                </div>
+                <div id="vehicles-list"></div>
+            </div>
+
+            <div id="vtab-firmenconfig" class="vtab-pane hidden">
+                <div class="vtab-toolbar">
+                    <div class="info-text" style="margin:0;color:var(--text-muted)">Tarife und Kaution für eigene Firmen konfigurieren</div>
+                </div>
+                <div id="firm-settings-list"></div>
+            </div>
+
+            <div id="vtab-zimmer" class="vtab-pane hidden">
+                <div class="vtab-toolbar">
+                    <div class="info-text" style="margin:0;color:var(--text-muted)">Letzte Zahlung pro Hotelzimmer</div>
+                    <button class="hero-btn" type="button" onclick="_zimmerLoaded=false;loadZimmerTab(true)">🔄 Aktualisieren</button>
+                </div>
+                <div id="zimmer-list"><div class="info-text">Wird geladen…</div></div>
+            </div>
+            <div id="vtab-einnahmen" class="vtab-pane hidden" style="display:none!important"></div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div>&copy; {{.Year}} {{.Branding.AppName}}</div>
+            <div class="footer-status">
+                <span class="system-dot"></span> Internes Tool
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{asset "js/api.js"}}"></script>
+    <script src="{{asset "js/app.js"}}"></script>
+    <script src="{{asset "js/contracts.js"}}"></script>
+    <script src="{{asset "js/production.js"}}"></script>
+    {{if .CanOptionen}}
+    <script src="{{asset "js/options.js"}}"></script>
+    {{end}}
+</body>
+</html>

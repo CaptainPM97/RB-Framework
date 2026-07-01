@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ersteinrichtung – {{.Branding.AppName}}</title>
+<link rel="stylesheet" href="{{asset "css/style.css"}}">
+<style>
+:root {
+    --primary: {{.Theme.Primary}};
+    --bg-gradient-start: {{.Theme.BgGradientStart}};
+    --bg-gradient-end: {{.Theme.BgGradientEnd}};
+}
+</style>
+</head>
+<body class="auth-body">
+    <div class="auth-card">
+        <div class="logo-icon" style="margin: 0 auto 16px auto;">{{.Branding.LogoInitials}}</div>
+        <h1 class="auth-title">{{.Branding.AppName}}</h1>
+        <p class="auth-subtitle">Willkommen! Lege deinen Admin-Account an, um die Einrichtung abzuschließen.</p>
+
+        {{if .Error}}
+            <div class="auth-error">{{.Error}}</div>
+        {{end}}
+
+        <form method="post" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <div class="form-row">
+                <label class="contact-label">Benutzername</label>
+                <input type="text" name="username" class="text-input" autocomplete="username" required autofocus pattern="[a-zA-Z0-9_.\-]{3,32}" minlength="3" maxlength="32">
+            </div>
+            <div class="form-row">
+                <label class="contact-label">Passwort</label>
+                <input type="password" name="password" class="text-input" autocomplete="new-password" required minlength="6">
+            </div>
+            <div class="form-row">
+                <label class="contact-label">Passwort bestätigen</label>
+                <input type="password" name="password_confirm" class="text-input" autocomplete="new-password" required minlength="6">
+            </div>
+            <button type="submit" class="submit-request-btn">Admin-Account anlegen</button>
+        </form>
+    </div>
+</body>
+</html>

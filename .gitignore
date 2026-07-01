@@ -1,0 +1,9 @@
+/bin/
+/data/
+/cmd/desktop/build/bin/
+/cmd/desktop/frontend/wailsjs/
+/frontend/
+/internal/serverdist/dist/*/resourcebay-server
+/internal/serverdist/dist/*/resourcebay-server.exe
+*.settings.json
+.DS_Store

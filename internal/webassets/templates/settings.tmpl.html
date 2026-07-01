@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Einstellungen – {{.Branding.AppName}}</title>
+<link rel="stylesheet" href="{{asset "css/style.css"}}">
+<style>
+:root {
+    --primary: {{.Theme.Primary}};
+    --bg-gradient-start: {{.Theme.BgGradientStart}};
+    --bg-gradient-end: {{.Theme.BgGradientEnd}};
+}
+.settings-section { margin-bottom: 24px; }
+.color-row { display: flex; align-items: center; gap: 10px; }
+.color-row input[type=color] { width: 44px; height: 36px; padding: 2px; border-radius: 8px; border: 1px solid var(--border-color); background: none; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-container">
+        <div class="logo-section">
+            <div class="logo-icon">{{.Branding.LogoInitials}}</div>
+            <div>
+                <div class="logo-text-title">{{.Branding.AppName}}</div>
+                <div class="logo-text-sub">Einstellungen</div>
+            </div>
+        </div>
+        <nav>
+            {{if .ShowBackLink}}<a href="/index.php" class="nav-link">← Zurück zur Übersicht</a>{{end}}
+        </nav>
+        <div class="right-section">
+            {{if .ShowLogout}}<a href="/logout.php" class="key-config-btn">Abmelden</a>{{end}}
+        </div>
+    </div>
+</header>
+
+<main>
+    <h1 class="section-heading">Einstellungen</h1>
+
+    {{if .Message}}
+        <div class="grid-card" style="margin-bottom:24px;border-color:{{if eq .MessageType "error"}}var(--red){{else}}var(--emerald){{end}}">
+            <div class="info-text" style="color:{{if eq .MessageType "error"}}var(--red){{else}}var(--emerald){{end}};padding:0">{{.Message}}</div>
+        </div>
+    {{end}}
+
+    <div class="bento-grid options-grid">
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">App-Branding</div>
+                <div class="card-icon">🏷️</div>
+            </div>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="section" value="branding">
+                <div class="form-row">
+                    <label class="contact-label">App-Name</label>
+                    <input type="text" name="appName" class="text-input" value="{{.Settings.Branding.AppName}}" maxlength="60" required>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Untertitel</label>
+                    <input type="text" name="subtitle" class="text-input" value="{{.Settings.Branding.Subtitle}}" maxlength="80">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Logo-Kürzel (2-3 Zeichen)</label>
+                    <input type="text" name="logoInitials" class="text-input" value="{{.Settings.Branding.LogoInitials}}" maxlength="3" required>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Vertragsnummer-Präfix (optional, sonst Logo-Kürzel)</label>
+                    <input type="text" name="contractPrefix" class="text-input" value="{{.Settings.Branding.ContractPrefix}}" maxlength="10">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Link 1 – Beschriftung</label>
+                    <input type="text" name="website1Label" class="text-input" value="{{.Settings.Branding.Website1Label}}" maxlength="40">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Link 1 – URL</label>
+                    <input type="url" name="website1Url" class="text-input" value="{{.Settings.Branding.Website1URL}}">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Link 2 – Beschriftung</label>
+                    <input type="text" name="website2Label" class="text-input" value="{{.Settings.Branding.Website2Label}}" maxlength="40">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Link 2 – URL</label>
+                    <input type="url" name="website2Url" class="text-input" value="{{.Settings.Branding.Website2URL}}">
+                </div>
+                <button type="submit" class="submit-request-btn">Branding speichern</button>
+            </form>
+        </div>
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Darstellung</div>
+                <div class="card-icon">🎨</div>
+            </div>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="section" value="theme">
+                <div class="form-row">
+                    <label class="contact-label">Akzentfarbe</label>
+                    <div class="color-row">
+                        <input type="color" name="primary" value="{{.Settings.Theme.Primary}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Hintergrund (Start)</label>
+                    <div class="color-row">
+                        <input type="color" name="bgGradientStart" value="{{.Settings.Theme.BgGradientStart}}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Hintergrund (Ende)</label>
+                    <div class="color-row">
+                        <input type="color" name="bgGradientEnd" value="{{.Settings.Theme.BgGradientEnd}}">
+                    </div>
+                </div>
+                <button type="submit" class="submit-request-btn">Darstellung speichern</button>
+            </form>
+        </div>
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">StateV-API</div>
+                <div class="card-icon">🔑</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:12px">
+                Diese Zugangsdaten werden ausschließlich lokal in dieser Installation gespeichert und niemals mitgeliefert.
+            </p>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="section" value="vapi">
+                <div class="form-row">
+                    <label class="contact-label">API Base-URL</label>
+                    <input type="text" name="vapiBase" class="text-input" value="{{.Settings.VAPI.Base}}" placeholder="https://api.example.com/req">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">API-Key (Bearer)</label>
+                    <input type="password" name="vapiKey" class="text-input" value="{{.Settings.VAPI.Key}}" autocomplete="off">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">API-Secret (optional)</label>
+                    <input type="password" name="vapiSecret" class="text-input" value="{{.Settings.VAPI.Secret}}" autocomplete="off">
+                </div>
+                <button type="submit" class="submit-request-btn">API-Zugang speichern</button>
+            </form>
+        </div>
+
+        {{if .ShowTeamExport}}
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Mit Team-Server verbinden</div>
+                <div class="card-icon">🔗</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:16px">
+                Diese App selbst verbindet sich nicht mit anderen Servern — sie arbeitet immer nur mit ihren eigenen
+                lokalen Daten. Ein Team-Server (siehe Export weiter unten) ist eine ganz normale Web-App: jede/r im
+                Team öffnet sie einfach in einem beliebigen Browser. Trag hier die Adresse ein, damit du sie mit einem
+                Klick öffnen kannst, statt sie dir merken zu müssen.
+            </p>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="section" value="team">
+                <div class="form-row">
+                    <label class="contact-label">Server-Adresse</label>
+                    <input type="text" name="teamServerUrl" class="text-input" value="{{.Settings.Team.ServerURL}}" placeholder="http://192.168.1.50:8080">
+                </div>
+                <button type="submit" class="submit-request-btn">Adresse speichern</button>
+            </form>
+            {{if .Settings.Team.ServerURL}}
+            <a class="hero-btn" style="margin-top:12px;text-decoration:none;display:inline-block;width:100%;text-align:center;box-sizing:border-box"
+               href="{{.Settings.Team.ServerURL}}" target="_blank" rel="noopener">🌐 Team-Server im Browser öffnen</a>
+            {{end}}
+        </div>
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Als Team-Server exportieren</div>
+                <div class="card-icon">📦</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:16px">
+                Diese lokale App läuft nur auf diesem Rechner. Für gemeinsame Team-Arbeit lädst du hier die passende
+                Server-Version herunter, kopierst sie auf einen eigenen Server (z.B. per SCP/FTP) und startest sie dort —
+                danach greift das ganze Team über den Browser auf denselben Datenstand zu, mit Login &amp; Rechteverwaltung.
+                Es passiert dabei nichts automatisch: kein Zugriff auf fremde Server, kein SSH.
+            </p>
+
+            <div class="form-row">
+                <label class="contact-label">Server-Binary herunterladen</label>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    {{range .Platforms}}
+                    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+                        <span style="font-size:13px">{{.Label}}</span>
+                        {{if .Available}}
+                        <a class="hero-btn hero-btn-secondary" style="text-decoration:none;white-space:nowrap" href="/api/export/server?platform={{.ID}}" download>⬇ Download</a>
+                        {{else}}
+                        <span style="font-size:11px;color:var(--text-dark)">nicht in diesem Build enthalten</span>
+                        {{end}}
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="contact-label">Aktuelle Daten mitnehmen (optional)</label>
+                <a class="hero-btn hero-btn-secondary" style="text-decoration:none;display:inline-block;width:fit-content" href="/api/export/data" download>⬇ Daten als ZIP exportieren</a>
+                <p class="modal-label-text" style="color:var(--text-dark);font-size:11px;line-height:1.5;margin-top:8px">
+                    Enthält Benutzer (inkl. Passwort-Hashes), Produktion, Verträge und diese Einstellungen. Entpacke die ZIP
+                    auf dem Server in den <code>data</code>-Ordner der Server-Binary, bevor du sie startest.
+                </p>
+            </div>
+
+            <div class="form-row">
+                <label class="contact-label">Auf dem Server starten</label>
+                <pre style="background:var(--bg-page);border-radius:8px;padding:12px;font-size:12px;overflow-x:auto;white-space:pre-wrap">chmod +x resourcebay-server
+./resourcebay-server -data-dir ./data -listen :8080</pre>
+                <p class="modal-label-text" style="color:var(--text-dark);font-size:11px;line-height:1.5;margin-top:8px">
+                    Danach ist die App im Team über <code>http://&lt;server-adresse&gt;:8080</code> erreichbar. Ohne mitgenommene
+                    Daten legt der erste Aufruf eine frische Ersteinrichtung an (eigener Admin-Account).
+                </p>
+            </div>
+        </div>
+        {{end}}
+
+    </div>
+</main>
+
+<footer>
+    <div class="footer-container">
+        <div>&copy; {{.Year}} {{.Branding.AppName}} — Framework-Version {{.Version}}</div>
+        <div class="footer-status"><span class="system-dot"></span> Einstellungen</div>
+    </div>
+</footer>
+</body>
+</html>
