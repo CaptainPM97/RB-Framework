@@ -1,0 +1,135 @@
+name: Build & Release
+
+# Fires on a version tag push (git tag vX.Y.Z && git push origin vX.Y.Z), or
+# manually from the Actions tab (useful to test a build without cutting a
+# release). Builds run on GitHub's own macOS/Windows runners, independent
+# of any local machine — this is also what produces the real Windows NSIS
+# installer, since that tool is broken when cross-compiled from macOS.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Resolve version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      # Cross-compiled here for linux-amd64/linux-arm64/windows-amd64 too —
+      # those three binaries get reused as release assets directly (see
+      # the release job) instead of rebuilding them again elsewhere.
+      - name: Build server binaries (all platforms, for embedding + release)
+        run: make server-dist VERSION=${{ steps.version.outputs.version || '0.0.0-dev' }}
+
+      - name: Build macOS server binary
+        run: make server VERSION=${{ steps.version.outputs.version || '0.0.0-dev' }}
+
+      - name: Build macOS app + DMG installer
+        env:
+          CGO_LDFLAGS: -framework UniformTypeIdentifiers
+        run: make desktop-mac VERSION=${{ steps.version.outputs.version || '0.0.0-dev' }}
+
+      - name: Stage release assets
+        run: |
+          mkdir -p out
+          cp "cmd/desktop/build/bin/ResourceBay Framework-Installer.dmg" out/ResourceBay-Framework-macOS.dmg
+          cp bin/resourcebay-server out/resourcebay-server-macos
+          cp internal/serverdist/dist/linux-amd64/resourcebay-server out/resourcebay-server-linux-amd64
+          cp internal/serverdist/dist/linux-arm64/resourcebay-server out/resourcebay-server-linux-arm64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: out/*
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: bash
+
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        shell: bash
+
+      - name: Install NSIS
+        run: choco install nsis -y
+        shell: pwsh
+
+      - name: Resolve version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Build server binaries (for embedding)
+        shell: bash
+        run: |
+          VER="${{ steps.version.outputs.version || '0.0.0-dev' }}"
+          LDFLAGS="-s -w -X resourcebay-framework/internal/buildinfo.Version=$VER"
+          GOOS=linux   GOARCH=amd64 go build -ldflags="$LDFLAGS" -o internal/serverdist/dist/linux-amd64/resourcebay-server ./cmd/server
+          GOOS=linux   GOARCH=arm64 go build -ldflags="$LDFLAGS" -o internal/serverdist/dist/linux-arm64/resourcebay-server ./cmd/server
+          GOOS=windows GOARCH=amd64 go build -ldflags="$LDFLAGS" -o internal/serverdist/dist/windows-amd64/resourcebay-server.exe ./cmd/server
+
+      - name: Build Windows server binary
+        shell: bash
+        run: |
+          VER="${{ steps.version.outputs.version || '0.0.0-dev' }}"
+          go build -ldflags="-X resourcebay-framework/internal/buildinfo.Version=$VER" -o out/resourcebay-server-windows-amd64.exe ./cmd/server
+
+      - name: Build Windows app + NSIS installer
+        shell: bash
+        run: |
+          VER="${{ steps.version.outputs.version || '0.0.0-dev' }}"
+          cd cmd/desktop
+          wails build -platform windows/amd64 -tags desktop -ldflags "-X resourcebay-framework/internal/buildinfo.Version=$VER" -s -skipbindings -nsis
+
+      - name: Stage release assets
+        shell: bash
+        run: |
+          cp cmd/desktop/build/bin/resourcebay-desktop.exe out/ResourceBay-Framework-Windows-portable.exe
+          cp cmd/desktop/build/bin/*-amd64-installer.exe out/ResourceBay-Framework-Windows-Setup.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: out/*
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
