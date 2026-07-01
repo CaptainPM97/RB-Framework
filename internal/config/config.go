@@ -51,6 +51,15 @@ type Team struct {
 	ServerURL string `json:"serverUrl"`
 }
 
+// Feedback holds where the in-app "report a bug / suggest an improvement"
+// form should send people — opened as a pre-filled GitHub "new issue" URL
+// in the browser (no API token stored or embedded anywhere). Defaults to
+// this framework's own repo but stays editable so a fork can point it at
+// their own.
+type Feedback struct {
+	RepoURL string `json:"repoUrl"`
+}
+
 // Settings is the part of the configuration the operator edits via the
 // settings screen and that gets persisted to disk.
 type Settings struct {
@@ -58,6 +67,7 @@ type Settings struct {
 	Theme    Theme    `json:"theme"`
 	VAPI     VAPI     `json:"vapi"`
 	Team     Team     `json:"team"`
+	Feedback Feedback `json:"feedback"`
 }
 
 // DefaultSettings returns generic, cosmetic placeholders only — never
@@ -73,6 +83,9 @@ func DefaultSettings() Settings {
 			Primary:         "#f97316",
 			BgGradientStart: "#1e1e2f",
 			BgGradientEnd:   "#0f0f15",
+		},
+		Feedback: Feedback{
+			RepoURL: "https://github.com/CaptainPM97/RB-Framework",
 		},
 	}
 }

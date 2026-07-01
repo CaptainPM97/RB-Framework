@@ -177,6 +177,26 @@
             </form>
         </div>
 
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Feedback-Ziel</div>
+                <div class="card-icon">💬</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:16px">
+                Wohin der „Feedback geben"-Knopf im Hauptmenü Bugs/Verbesserungsvorschläge schickt (als vorausgefülltes
+                GitHub-Issue, das sich im Browser öffnet — es wird kein Zugangsdaten in der App gespeichert).
+            </p>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="section" value="feedback">
+                <div class="form-row">
+                    <label class="contact-label">GitHub-Repository-URL</label>
+                    <input type="text" name="feedbackRepoUrl" class="text-input" value="{{.Settings.Feedback.RepoURL}}" placeholder="https://github.com/dein-name/dein-repo">
+                </div>
+                <button type="submit" class="submit-request-btn">Speichern</button>
+            </form>
+        </div>
+
         {{if .ShowTeamExport}}
         <div class="grid-card col-span-1 settings-section">
             <div class="card-header">
@@ -234,10 +254,25 @@
 
             <div class="form-row">
                 <label class="contact-label">Aktuelle Daten mitnehmen (optional)</label>
-                <a class="hero-btn hero-btn-secondary" style="text-decoration:none;display:inline-block;width:fit-content" href="/api/export/data" download>⬇ Daten als ZIP exportieren</a>
+                <form method="get" action="/api/export/data">
+                    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;font-size:13px">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="users" checked> Benutzer (inkl. Passwort-Hashes)
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="production" checked> Produktion
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="contracts" checked> Verträge
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                            <input type="checkbox" name="settings" checked> Einstellungen (Branding/Theme/API-Key)
+                        </label>
+                    </div>
+                    <button type="submit" class="hero-btn hero-btn-secondary">⬇ Auswahl als ZIP exportieren</button>
+                </form>
                 <p class="modal-label-text" style="color:var(--text-dark);font-size:11px;line-height:1.5;margin-top:8px">
-                    Enthält Benutzer (inkl. Passwort-Hashes), Produktion, Verträge und diese Einstellungen. Entpacke die ZIP
-                    auf dem Server in den <code>data</code>-Ordner der Server-Binary, bevor du sie startest.
+                    Entpacke die ZIP auf dem Server in den <code>data</code>-Ordner der Server-Binary, bevor du sie startest.
                 </p>
             </div>
 

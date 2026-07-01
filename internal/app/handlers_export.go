@@ -61,11 +61,26 @@ func (a *App) handleExportServer(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-// handleExportData zips the current data directory (users, production,
+// exportableFiles maps the checkbox names used by the settings form to
+// the actual data files.
+var exportableFiles = []struct {
+	Param string
+	File  string
+}{
+	{"users", "users.json"},
+	{"production", "production.json"},
+	{"contracts", "contracts.json"},
+	{"settings", "settings.json"},
+}
+
+// handleExportData zips the selected data files (users, production,
 // contracts, settings) so an operator can carry their local state over to
-// a freshly exported server instance.
+// a freshly exported server instance. With no query string at all
+// (e.g. a bare link), everything is included; otherwise only the
+// checkboxes actually present are honored, so unchecking one leaves it
+// out even though the others stay selected.
 func (a *App) handleExportData(w http.ResponseWriter, r *http.Request) {
-	files := []string{"users.json", "production.json", "contracts.json", "settings.json"}
+	selectAll := len(r.URL.Query()) == 0
 
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="resourcebay-daten-export.zip"`)
@@ -73,13 +88,16 @@ func (a *App) handleExportData(w http.ResponseWriter, r *http.Request) {
 	zw := zip.NewWriter(w)
 	defer zw.Close()
 
-	for _, name := range files {
-		path := filepath.Join(a.Cfg.DataDir, name)
+	for _, f := range exportableFiles {
+		if !selectAll && r.URL.Query().Get(f.Param) == "" {
+			continue
+		}
+		path := filepath.Join(a.Cfg.DataDir, f.File)
 		src, err := os.Open(path)
 		if err != nil {
 			continue // not every file exists yet on a fresh install — skip silently
 		}
-		dst, err := zw.Create(name)
+		dst, err := zw.Create(f.File)
 		if err == nil {
 			_, _ = io.Copy(dst, src)
 		}

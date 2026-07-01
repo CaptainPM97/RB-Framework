@@ -99,6 +99,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		RawPermsJSON     string
 		CSRFToken        string
 		OtherUsers       []otherUser
+		FeedbackRepoURL  string
 		Year             int
 	}{
 		Branding:         settings.Branding,
@@ -128,6 +129,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		RawPermsJSON:     string(rawPermsJSON),
 		CSRFToken:        sess.CSRFToken,
 		OtherUsers:       others,
+		FeedbackRepoURL:  settings.Feedback.RepoURL,
 		Year:             time.Now().Year(),
 	})
 }

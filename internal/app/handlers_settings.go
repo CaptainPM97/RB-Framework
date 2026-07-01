@@ -70,6 +70,14 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 				message, messageType = "Team-Server-Adresse gespeichert.", "success"
+
+			case "feedback":
+				settings.Feedback.RepoURL = strings.TrimSpace(r.FormValue("feedbackRepoUrl"))
+				if err := a.Cfg.Save(settings); err != nil {
+					message, messageType = "Speichern fehlgeschlagen.", "error"
+					break
+				}
+				message, messageType = "Feedback-Repository gespeichert.", "success"
 			}
 		}
 	}

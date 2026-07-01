@@ -34,6 +34,7 @@
         firmenEdit:     {{.CanFirmEdit}},
         raw:            {{.RawPermsJSON}},
     };
+    window.RB_FEEDBACK_REPO = {{.FeedbackRepoURL}};
 </script>
 </head>
 <body>
@@ -77,6 +78,7 @@
                         {{if .CanOptionen}}<a href="#" class="nav-link" data-target="page-optionen">Optionen</a>{{end}}
                         <div class="nav-sep"></div>
                         <a href="#" class="nav-link nav-action" onclick="location.reload();return false;" title="Lädt die Seite neu und ruft alle Markt-/Lager-/Bank-/Produktionsdaten frisch ab">🔄 Aktualisieren</a>
+                        <a href="#" class="nav-link nav-action" data-target="page-feedback">💬 Feedback geben</a>
                         {{if .IsAdmin}}
                             <a href="/admin.php" class="nav-link nav-action">⚙️ Benutzer verwalten</a>
                             <a href="/settings" class="nav-link nav-action">🎨 Einstellungen</a>
@@ -437,6 +439,38 @@
 
         </section>
 
+        <section id="page-feedback" class="content-section">
+            <div class="grid-card" style="max-width:640px">
+                <div class="card-header">
+                    <div class="card-title">Feedback geben</div>
+                    <div class="card-icon">💬</div>
+                </div>
+                <p class="modal-label-text" style="color:var(--text-dark);font-size:13px;line-height:1.6;margin-bottom:16px">
+                    Bug gefunden oder eine Idee für eine Verbesserung? Das öffnet ein vorausgefülltes GitHub-Issue in
+                    einem neuen Browser-Tab — du musst nur noch auf „Submit new issue" klicken. Es wird nichts
+                    automatisch gesendet und keine Zugangsdaten sind dafür in der App gespeichert.
+                </p>
+                <div class="form-row">
+                    <label class="contact-label">Art</label>
+                    <select id="feedback-type" class="contact-select">
+                        <option value="bug">🐛 Bug</option>
+                        <option value="enhancement">✨ Verbesserung</option>
+                        <option value="question">❓ Frage</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Titel</label>
+                    <input type="text" id="feedback-title" class="text-input" maxlength="200" placeholder="Kurze Zusammenfassung">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Beschreibung</label>
+                    <textarea id="feedback-body" rows="8" class="text-input textarea-input" placeholder="Was ist passiert? Was hast du erwartet? Schritte zum Nachstellen..."></textarea>
+                </div>
+                <button type="button" class="submit-request-btn" onclick="submitFeedback()">In GitHub öffnen</button>
+                <div class="info-text" id="feedback-status" style="display:none;margin-top:10px"></div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
@@ -455,5 +489,29 @@
     {{if .CanOptionen}}
     <script src="{{asset "js/options.js"}}"></script>
     {{end}}
+    <script>
+    function submitFeedback() {
+        const status = document.getElementById('feedback-status');
+        const repo = window.RB_FEEDBACK_REPO;
+        if (!repo) {
+            status.style.display = '';
+            status.textContent = 'Kein Feedback-Repository konfiguriert (siehe Einstellungen).';
+            return;
+        }
+        const type = document.getElementById('feedback-type').value;
+        const title = document.getElementById('feedback-title').value.trim();
+        const body = document.getElementById('feedback-body').value.trim();
+        if (!title) {
+            status.style.display = '';
+            status.textContent = 'Bitte einen Titel eingeben.';
+            return;
+        }
+        const url = repo.replace(/\/$/, '') + '/issues/new?title=' + encodeURIComponent(title)
+            + '&body=' + encodeURIComponent(body) + '&labels=' + encodeURIComponent(type);
+        window.open(url, '_blank', 'noopener');
+        status.style.display = '';
+        status.textContent = 'GitHub wurde in einem neuen Tab geöffnet — dort noch "Submit new issue" klicken.';
+    }
+    </script>
 </body>
 </html>
