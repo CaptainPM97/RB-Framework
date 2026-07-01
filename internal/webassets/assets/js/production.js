@@ -1524,22 +1524,17 @@ function renderBestellung() {
 
     const rabatt = Math.max(0, Math.min(100, parseFloat(bestellState.rabatt) || 0));
 
-    // Summen — globale Rohstoff-Berechnung (wie Kalkulator)
+    // Summen — nur die bestellten Fertigprodukte, keine Rohstoff-/Kostenkalkulation.
     let totalVK = 0;
-    const bestellGrouped = {};
     for (const item of bestellState.items) {
         if (!item.productId) continue;
         const p = products.find(x => x.id === item.productId);
         if (!p) continue;
         const qty = Math.max(1, item.qty || 1);
         totalVK += _calcVK(p.id) * qty;
-        bestellGrouped[item.productId] = (bestellGrouped[item.productId] || 0) + qty;
     }
-    const shopping       = Object.keys(bestellGrouped).length ? _computeGlobalShopping(bestellGrouped) : {};
-    const totalProdKosten = Object.values(shopping).reduce((s, d) => s + d.cost, 0);
-    const rabattBetrag   = totalVK * rabatt / 100;
-    const zuZahlen       = totalVK - rabattBetrag;
-    const gewinn         = zuZahlen - totalProdKosten;
+    const rabattBetrag = totalVK * rabatt / 100;
+    const zuZahlen      = totalVK - rabattBetrag;
 
     const itemRowsHtml = bestellState.items.map((item, idx) => {
         const p       = item.productId ? products.find(x => x.id === item.productId) : null;
@@ -1559,14 +1554,6 @@ function renderBestellung() {
             <button class="icon-btn cv-del-btn" title="Artikel entfernen" onclick="bestellRemoveItem(${idx})">🗑</button>
         </div>`;
     }).join('');
-
-    const shopRows = Object.entries(shopping)
-        .sort((a, b) => a[0].localeCompare(b[0], 'de'))
-        .map(([name, d]) => `<div class="prod-shop-row">
-            <span>${escapeHtml(name)}</span>
-            <span style="color:var(--text-muted)">${prodFmtN(d.menge)} ${escapeHtml(d.einheit||'')} × ${prodFmtMoney(d.preis)}</span>
-            <span style="font-weight:600">${prodFmtMoney(d.cost)}</span>
-        </div>`).join('');
 
     // Gespeicherte Bestellungen — pro Kunde gruppiert mit Gesamtrechnung
     const bestellungen = productionData.bestellungen || [];
@@ -1688,29 +1675,9 @@ function renderBestellung() {
                 <div class="prod-price-row prod-price-row-total">
                     <span class="prod-price-lbl">Netto-Einnahme</span>
                     <span class="prod-price-val prod-p-gesamt">${prodFmtMoney(zuZahlen)}</span>
-                </div>
-                <div class="prod-price-divider"></div>` : `
-                <div class="prod-price-divider"></div>`}
-                <div class="prod-price-row">
-                    <span class="prod-price-lbl">Produktionskosten</span>
-                    <span class="prod-price-val">${prodFmtMoney(totalProdKosten)}</span>
-                </div>
-                <div class="prod-price-row prod-price-row-total" style="margin-top:4px">
-                    <span class="prod-price-lbl">Gewinn nach Rabatt</span>
-                    <span class="prod-price-val ${gewinn >= 0 ? 'prod-p-gewinn' : ''}" style="${gewinn < 0 ? 'color:var(--red)' : ''}">${prodFmtMoney(gewinn)}</span>
-                </div>
+                </div>` : ''}
             </div>
         </div>
-        ${shopRows ? `
-        <div class="grid-card">
-            <div class="card-header" style="margin-bottom:12px"><div class="card-title" style="font-size:14px">Benötigte Rohstoffe</div></div>
-            <div class="prod-shop-header"><span>Rohstoff</span><span>Menge</span><span>Kosten</span></div>
-            ${shopRows}
-            <div class="prod-total-row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color)">
-                <span style="font-weight:600">Rohstoffkosten gesamt</span>
-                <strong>${prodFmtMoney(totalProdKosten)}</strong>
-            </div>
-        </div>` : ''}
         ` : `<div class="grid-card"><div class="info-text" style="padding:20px 0;text-align:center">Füge Artikel hinzu,<br>um die Zusammenfassung zu sehen.</div></div>`}
     </div>
 </div>
