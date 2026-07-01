@@ -35,9 +35,11 @@ type Theme struct {
 	BgGradientEnd   string `json:"bgGradientEnd"`
 }
 
+// VAPI holds only the operator's own credentials. The API base URL is not
+// configurable — it's a fixed address (see internal/vapi.BaseURL), not
+// per-operator data.
 type VAPI struct {
 	Key    string `json:"key"`
-	Base   string `json:"base"`
 	Secret string `json:"secret"`
 }
 
@@ -171,9 +173,9 @@ func (c *Config) Save(s Settings) error {
 	return nil
 }
 
-// HasVAPIKey reports whether the operator has entered vAPI credentials yet.
+// HasVAPIKey reports whether the operator has entered a vAPI key yet.
 func (c *Config) HasVAPIKey() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.settings.VAPI.Key != "" && c.settings.VAPI.Base != ""
+	return c.settings.VAPI.Key != ""
 }

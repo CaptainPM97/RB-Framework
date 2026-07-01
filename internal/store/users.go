@@ -44,6 +44,12 @@ func (s *UserStore) save(users map[string]User) error {
 	return s.guard.write(users)
 }
 
+// Import overwrites the whole user store, e.g. from a users.json exported
+// by another installation. Existing bcrypt hashes are preserved as-is.
+func (s *UserStore) Import(users map[string]User) error {
+	return s.save(users)
+}
+
 func (s *UserStore) IsEmpty() (bool, error) {
 	users, err := s.Load()
 	if err != nil {

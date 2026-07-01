@@ -129,13 +129,13 @@
             <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:12px">
                 Diese Zugangsdaten werden ausschließlich lokal in dieser Installation gespeichert und niemals mitgeliefert.
             </p>
+            <div class="form-row">
+                <label class="contact-label">API Base-URL</label>
+                <div class="text-input" style="color:var(--text-dark);cursor:default">{{.VAPIBaseURL}}</div>
+            </div>
             <form method="post">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <input type="hidden" name="section" value="vapi">
-                <div class="form-row">
-                    <label class="contact-label">API Base-URL</label>
-                    <input type="text" name="vapiBase" class="text-input" value="{{.Settings.VAPI.Base}}" placeholder="https://api.example.com/req">
-                </div>
                 <div class="form-row">
                     <label class="contact-label">API-Key (Bearer)</label>
                     <input type="password" name="vapiKey" class="text-input" value="{{.Settings.VAPI.Key}}" autocomplete="off">
@@ -145,6 +145,35 @@
                     <input type="password" name="vapiSecret" class="text-input" value="{{.Settings.VAPI.Secret}}" autocomplete="off">
                 </div>
                 <button type="submit" class="submit-request-btn">API-Zugang speichern</button>
+            </form>
+        </div>
+
+        <div class="grid-card col-span-1 settings-section">
+            <div class="card-header">
+                <div class="card-title">Daten importieren</div>
+                <div class="card-icon">📥</div>
+            </div>
+            <p class="modal-label-text" style="color:var(--text-dark);font-size:12px;line-height:1.5;margin-bottom:16px">
+                Für die Übernahme aus einer bestehenden Installation (z.B. per FTP heruntergeladene <code>users.json</code>,
+                <code>production.json</code>, <code>contracts.json</code>). Nur ausgewählte Dateien werden ersetzt, die
+                vorherige Version wird vorher automatisch als Sicherung abgelegt (<code>.bak-Zeitstempel</code> im
+                Datenordner). Mehrere Dateien können gleichzeitig hochgeladen werden.
+            </p>
+            <form method="post" action="/settings/import" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div class="form-row">
+                    <label class="contact-label">Benutzer (users.json)</label>
+                    <input type="file" name="users" accept="application/json,.json" class="text-input">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Produktion (production.json)</label>
+                    <input type="file" name="production" accept="application/json,.json" class="text-input">
+                </div>
+                <div class="form-row">
+                    <label class="contact-label">Verträge (contracts.json)</label>
+                    <input type="file" name="contracts" accept="application/json,.json" class="text-input">
+                </div>
+                <button type="submit" class="submit-request-btn" onclick="return confirm('Ausgewählte Dateien überschreiben die aktuellen Daten (eine Sicherung wird automatisch angelegt). Fortfahren?')">Importieren</button>
             </form>
         </div>
 

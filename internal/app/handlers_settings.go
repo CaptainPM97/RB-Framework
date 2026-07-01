@@ -8,6 +8,7 @@ import (
 	"resourcebay-framework/internal/auth"
 	"resourcebay-framework/internal/buildinfo"
 	"resourcebay-framework/internal/config"
+	"resourcebay-framework/internal/vapi"
 )
 
 func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +55,6 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 				message, messageType = "Darstellung gespeichert.", "success"
 
 			case "vapi":
-				settings.VAPI.Base = strings.TrimSpace(r.FormValue("vapiBase"))
 				settings.VAPI.Key = strings.TrimSpace(r.FormValue("vapiKey"))
 				settings.VAPI.Secret = strings.TrimSpace(r.FormValue("vapiSecret"))
 				if err := a.Cfg.Save(settings); err != nil {
@@ -74,6 +74,17 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The import form posts to its own endpoint (needs multipart parsing)
+	// and redirects back here with a one-shot cookie for the result message.
+	if message == "" {
+		if c, err := r.Cookie("import_message"); err == nil {
+			if kind, text, ok := strings.Cut(c.Value, ":"); ok {
+				messageType, message = kind, text
+			}
+			http.SetCookie(w, &http.Cookie{Name: "import_message", Value: "", Path: "/settings", MaxAge: -1})
+		}
+	}
+
 	settings := a.Cfg.Settings()
 	platforms := a.teamExportPlatforms()
 
@@ -89,6 +100,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		ShowTeamExport bool
 		Platforms      []platformRow
 		Version        string
+		VAPIBaseURL    string
 		Year           int
 	}{
 		Branding:       settings.Branding,
@@ -102,6 +114,7 @@ func (a *App) handleSettings(w http.ResponseWriter, r *http.Request) {
 		ShowTeamExport: a.Cfg.Mode == config.ModeLocal,
 		Platforms:      platforms,
 		Version:        buildinfo.Version,
+		VAPIBaseURL:    vapi.BaseURL,
 		Year:           time.Now().Year(),
 	})
 }

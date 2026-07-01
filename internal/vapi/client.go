@@ -18,6 +18,12 @@ import (
 	"resourcebay-framework/internal/config"
 )
 
+// BaseURL is the fixed StateV vAPI address, taken from the original
+// StateV Verwaltung app's includes/config.php (STATEV_API_BASE). It is
+// not operator-configurable — only the Bearer key/secret are, since
+// those (unlike the endpoint address) are actual per-operator credentials.
+const BaseURL = "https://api.statev.de/req"
+
 type Client struct {
 	cfg        *config.Config
 	httpClient *http.Client
@@ -47,8 +53,7 @@ type Result struct {
 }
 
 func (c *Client) url(path string) string {
-	settings := c.cfg.Settings()
-	return strings.TrimRight(settings.VAPI.Base, "/") + "/" + strings.TrimLeft(path, "/")
+	return strings.TrimRight(BaseURL, "/") + "/" + strings.TrimLeft(path, "/")
 }
 
 // Do performs a single proxied request, mirroring api/proxy.php's curl call.

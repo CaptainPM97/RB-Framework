@@ -15,6 +15,7 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/impersonate.php", a.requireAdmin(a.handleImpersonate))
 	mux.HandleFunc("/admin.php", a.requireAdmin(a.handleAdmin))
 	mux.HandleFunc("/settings", a.settingsRoute)
+	mux.HandleFunc("/settings/import", a.settingsGate(a.handleImportData))
 	a.registerExportRoutes(mux)
 
 	mux.HandleFunc("/index.php", a.requireLogin(a.handleIndex))
@@ -38,11 +39,20 @@ func (a *App) registerRoutes(mux *http.ServeMux) {
 
 // settingsRoute: admin-only in server mode, always open in local mode.
 func (a *App) settingsRoute(w http.ResponseWriter, r *http.Request) {
-	if a.Cfg.Mode == config.ModeLocal {
-		a.handleSettings(w, r)
-		return
+	a.settingsGate(a.handleSettings)(w, r)
+}
+
+// settingsGate applies the same access rule as /settings itself
+// (admin-only in server mode, always open in local mode) to any handler
+// that lives under the settings area, e.g. /settings/import.
+func (a *App) settingsGate(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if a.Cfg.Mode == config.ModeLocal {
+			next(w, r)
+			return
+		}
+		a.requireAdmin(next)(w, r)
 	}
-	a.requireAdmin(a.handleSettings)(w, r)
 }
 
 // localOnly gates the team-server export endpoints to desktop/local mode
